@@ -1,98 +1,150 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// app/(tabs)/index.tsx
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  RefreshControl,
+  ScrollView 
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { useGroundWaterData } from '../../lib/hooks/useGroundWaterData';
+import { WaterLevelCard } from '../../components/WaterLevelCard';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { ErrorMessage } from '../../components/ErrorMessage';
+import { STATES, ODISHA_DISTRICTS } from '../../lib/constants/config';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [selectedState, setSelectedState] = useState('Odisha');
+  const [selectedDistrict, setSelectedDistrict] = useState('Baleshwar');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const { data, loading, error, refreshData } = useGroundWaterData({
+    stateName: selectedState,
+    districtName: selectedDistrict,
+    startdate: '2024-01-01',
+    enddate: '2024-01-31',
+    size: 30,
+  });
+
+  const handleStateChange = (state: string) => {
+    setSelectedState(state);
+    setSelectedDistrict('');
+  };
+
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
+  };
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <ErrorMessage error={error} onRetry={refreshData} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Groundwater Level Monitor</Text>
+      
+      <ScrollView 
+        style={styles.filters}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>State:</Text>
+          <Picker
+            selectedValue={selectedState}
+            style={styles.picker}
+            onValueChange={handleStateChange}
+          >
+            {STATES.map(state => (
+              <Picker.Item key={state} label={state} value={state} />
+            ))}
+          </Picker>
+        </View>
+
+        {selectedState === 'Odisha' && (
+          <View style={styles.pickerContainer}>
+            <Text style={styles.pickerLabel}>District:</Text>
+            <Picker
+              selectedValue={selectedDistrict}
+              style={styles.picker}
+              onValueChange={handleDistrictChange}
+            >
+              <Picker.Item label="All Districts" value="" />
+              {ODISHA_DISTRICTS.map(district => (
+                <Picker.Item key={district} label={district} value={district} />
+              ))}
+            </Picker>
+          </View>
+        )}
+      </ScrollView>
+
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => `${item.stationCode}-${item.dataTime}`}
+          renderItem={({ item }) => <WaterLevelCard record={item} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={refreshData}
+              colors={['#007AFF']}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No data available</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 16,
+    color: '#333',
+  },
+  filters: {
+    padding: 16,
+    backgroundColor: 'white',
+  },
+  pickerContainer: {
+    marginRight: 16,
+    minWidth: 150,
+  },
+  pickerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#333',
+  },
+  picker: {
+    height: 50,
+    width: 150,
+  },
+  emptyContainer: {
+    padding: 40,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

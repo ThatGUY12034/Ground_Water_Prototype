@@ -1,0 +1,30 @@
+# React Native Groundwater App - Requirements
+# This file contains all the dependencies needed for the project
+
+# Core Dependencies
+expo=~51.0.0
+react-native=0.74.0
+
+# Navigation
+expo-router=~3.4.0
+
+# UI Components
+@react-native-picker/picker=2.7.2
+
+# HTTP Client
+axios=^1.6.0
+
+# TypeScript (if using)
+typescript=^5.3.0
+@types/react=^18.2.0
+@types/react-native=^0.74.0
+
+# Development Dependencies
+@types/axios=^1.6.0
+
+# Optional: Maps (if you add map functionality later)
+react-native-maps=^1.14.0
+expo-location=~16.0.0
+
+# Optional: Charts (for data visualization)
+victory-native=^36.6.11

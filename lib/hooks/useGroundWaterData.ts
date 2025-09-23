@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GroundWaterRecord } from '../../components/WaterLevelCard';
 import { ApiParams } from '../services/apiService';
-import { apiService } from '../services/apiService';
+import { apiServiceWithFallback as apiService } from '../services/apiServiceWithFallback';
 
 
 export const useGroundWaterData = (initialParams: ApiParams) => {
@@ -51,6 +51,7 @@ export const useGroundWaterData = (initialParams: ApiParams) => {
     data,
     loading,
     error,
+    usingMockData: false,
     refreshData,
     updateParams,
     params,

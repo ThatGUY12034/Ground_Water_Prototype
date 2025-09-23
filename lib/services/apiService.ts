@@ -1,5 +1,6 @@
 // services/apiService.ts
 import { GroundWaterRecord } from '../../components/WaterLevelCard';
+import { Platform } from 'react-native';
 
 export interface ApiParams {
   stateName: string;
@@ -19,12 +20,23 @@ export interface ApiResponse {
 }
 
 class ApiService {
-  private baseUrl = 'https://indiawris.gov.in/Dataset/Ground Water Level';
+  // Use CORS proxy for web, direct URL for native
+  private getBaseUrl(): string {
+    if (Platform.OS === 'web') {
+      // Use a CORS proxy service
+      return 'https://corsproxy.io/?https://indiawris.gov.in/Dataset/Ground Water Level';
+    } else {
+      // Direct URL for native apps (no CORS issues)
+      return 'https://indiawris.gov.in/Dataset/Ground Water Level';
+    }
+  }
 
   async fetchGroundWaterData(params: ApiParams): Promise<GroundWaterRecord[]> {
     try {
+      const baseUrl = this.getBaseUrl();
+      
       // Build URL with URLSearchParams for proper encoding
-      const url = new URL(this.baseUrl);
+      const url = new URL(baseUrl);
       
       // Required parameters
       url.searchParams.append('stateName', params.stateName);
@@ -36,6 +48,9 @@ class ApiService {
       url.searchParams.append('download', params.download || 'false');
       url.searchParams.append('page', (params.page || 0).toString());
       url.searchParams.append('size', (params.size || 50).toString());
+
+
+      
       
       // Optional district parameter
       if (params.districtName) {

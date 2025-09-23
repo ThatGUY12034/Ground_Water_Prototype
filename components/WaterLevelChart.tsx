@@ -1,6 +1,6 @@
 // components/WaterLevelChart.tsx
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface WaterLevelChartProps {
   data: Array<{ date: string; level: number }>;
@@ -9,36 +9,45 @@ interface WaterLevelChartProps {
 
 export const WaterLevelChart: React.FC<WaterLevelChartProps> = ({ data, stationName }) => {
   const chartHeight = 150;
-  const maxLevel = Math.max(...data.map(d => Math.abs(d.level))) * 1.2;
-  
+
+  // find min and max level to scale properly
+  const minLevel = Math.min(...data.map(d => d.level));
+  const maxLevel = Math.max(...data.map(d => d.level));
+
+  const range = Math.max(Math.abs(minLevel), Math.abs(maxLevel)) || 1;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Water Level Trend - {stationName}</Text>
-      
+
       <View style={[styles.chartContainer, { height: chartHeight }]}>
-        {/* Zero line */}
-        <View style={[styles.zeroLine, { top: chartHeight / 2 }]} />
-        
-        {data.slice(-10).map((point, index) => (
-          <View key={index} style={styles.dataPoint}>
-            <View 
-              style={[
-                styles.levelBar,
-                { 
-                  height: (Math.abs(point.level) / maxLevel) * (chartHeight / 2),
-                  top: point.level >= 0 ? (chartHeight / 2) - (Math.abs(point.level) / maxLevel) * (chartHeight / 2) 
-                                       : chartHeight / 2,
-                  backgroundColor: point.level >= 0 ? '#4caf50' : '#f44336'
-                }
-              ]} 
-            />
-            <Text style={styles.dateLabel}>
-              {new Date(point.date).getDate()}/{new Date(point.date).getMonth() + 1}
-            </Text>
-          </View>
-        ))}
+        {/* Zero line at baseline */}
+        <View style={[styles.zeroLine, { bottom: chartHeight / 2 }]} />
+
+        {data.slice(-10).map((point, index) => {
+          const barHeight = (Math.abs(point.level) / range) * (chartHeight / 2);
+
+          return (
+            <View key={index} style={styles.dataPoint}>
+              <View
+                style={[
+                  styles.levelBar,
+                  {
+                    height: barHeight,
+                    bottom: chartHeight / 2, // baseline at zero
+                    backgroundColor: point.level >= 0 ? '#4caf50' : '#f44336',
+                    transform: [{ translateY: point.level >= 0 ? -barHeight : 0 }],
+                  },
+                ]}
+              />
+              <Text style={styles.dateLabel}>
+                {new Date(point.date).getDate()}/{new Date(point.date).getMonth() + 1}
+              </Text>
+            </View>
+          );
+        })}
       </View>
-      
+
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#4caf50' }]} />
@@ -74,6 +83,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ccc',
     marginBottom: 8,
+    position: 'relative',
   },
   zeroLine: {
     position: 'absolute',
@@ -85,6 +95,7 @@ const styles = StyleSheet.create({
   dataPoint: {
     alignItems: 'center',
     flex: 1,
+    justifyContent: 'flex-end',
   },
   levelBar: {
     width: 8,

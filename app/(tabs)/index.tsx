@@ -93,40 +93,7 @@ export default function HomeScreen() {
       <ConnectionStatus usingMockData={usingMockData} error={error} />
       
       
-      <ScrollView 
-        style={styles.filters}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>State:</Text>
-          <Picker
-            selectedValue={selectedState}
-            style={styles.picker}
-            onValueChange={handleStateChange}
-          >
-            {STATES.map(state => (
-              <Picker.Item key={state} label={state} value={state} />
-            ))}
-          </Picker>
-        </View>
-
-        {selectedState === 'Odisha' && (
-          <View style={styles.pickerContainer}>
-            <Text style={styles.pickerLabel}>District:</Text>
-            <Picker
-              selectedValue={selectedDistrict}
-              style={styles.picker}
-              onValueChange={handleDistrictChange}
-            >
-              <Picker.Item label="All Districts" value="" />
-              {ODISHA_DISTRICTS.map(district => (
-                <Picker.Item key={district} label={district} value={district} />
-              ))}
-            </Picker>
-          </View>
-        )}
-      </ScrollView>
+     
 
       <WebCORSNotice />
       
